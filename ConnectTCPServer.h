@@ -28,4 +28,4 @@ const unsigned int MAX_BUF_SIZE = 2000; // set to maximum bytes to receive
 // updates connectTime with time taken to connect on success
 int ConnectTCPServer(const char *addr, const char *port, double *connectTime);
 
-#endif _CONNECTTCPSERVER_H_
+#endif

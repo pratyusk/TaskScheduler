@@ -4,6 +4,9 @@ CC = g++
 # flags: C++11 support + GDB + show all warnings
 CFLAGS = -std=c++0x -g -Wall
 
+# object files
+OBJECTS = TaskScheduler.o ConnectTCPServer.o CalculatePhysicalMemory.o
+
 # executable: test case
 TARGET = testPeriodicTaskScheduler
 
@@ -13,9 +16,10 @@ default: all
 all: $(TARGET)
 
 # g++ command
-$(TARGET): TaskScheduler.o ConnectTCPServer.o CalculatePhysicalMemory.o $(TARGET).cpp
-	$(CC) $(CFLAGS) TaskScheduler.o ConnectTCPServer.o CalculatePhysicalMemory.o -o $(TARGET) $(TARGET).cpp
+$(TARGET): $(OBJECTS) $(TARGET).cpp
+	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) $(TARGET).cpp
 	chmod +x $(TARGET)
+	chmod +x sampleTest.sh
 
 # required object files
 TaskScheduler.o: TaskScheduler.cpp TaskScheduler.h

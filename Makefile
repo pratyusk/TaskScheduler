@@ -5,7 +5,7 @@ CC = g++
 CFLAGS = -std=c++0x -g -Wall
 
 # executable: test case
-TARGET = testMurmur
+TARGET = testPeriodicTaskScheduler
 
 default: all
 
@@ -13,16 +13,19 @@ default: all
 all: $(TARGET)
 
 # g++ command
-$(TARGET): MurmurHash3.o MurmurClass.o $(TARGET).cpp
-	$(CC) $(CFLAGS) MurmurHash3.o MurmurClass.o -o $(TARGET) $(TARGET).cpp
+$(TARGET): TaskScheduler.o ConnectTCPServer.o CalculatePhysicalMemory.o $(TARGET).cpp
+	$(CC) $(CFLAGS) TaskScheduler.o ConnectTCPServer.o CalculatePhysicalMemory.o -o $(TARGET) $(TARGET).cpp
 	chmod +x $(TARGET)
 
 # required object files
-MurmurHash3.o: MurmurHash3.cpp MurmurHash3.h
-	$(CC) $(CFLAGS) -c MurmurHash3.cpp
+TaskScheduler.o: TaskScheduler.cpp TaskScheduler.h
+	$(CC) $(CFLAGS) -c TaskScheduler.cpp
 
-MurmurClass.o: MurmurClass.cpp MurmurClass.h
-	$(CC) $(CFLAGS) -c MurmurClass.cpp
+ConnectTCPServer.o: ConnectTCPServer.cpp ConnectTCPServer.h
+	$(CC) $(CFLAGS) -c ConnectTCPServer.cpp
+
+CalculatePhysicalMemory.o: CalculatePhysicalMemory.cpp CalculatePhysicalMemory.h
+	$(CC) $(CFLAGS) -c CalculatePhysicalMemory.cpp
 
 # clean executables
 clean:

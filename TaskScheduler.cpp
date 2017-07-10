@@ -1,5 +1,12 @@
 #include "TaskScheduler.h"
 
+template <typename T, typename U>
+void runTask(T func, U... args) {
+	while(1) {
+
+	}
+}
+
 void TaskScheduler::stringToLower(std::string &inputString) {
 	std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
 }
@@ -29,6 +36,7 @@ TaskScheduler::TaskScheduler(std::string _db) : sqliteDB(_db) {
 						  "METRIC_NAME TEXT," \
 						  "METRIC_VALUE REAL DEFAULT 0," \
 						  "METRIC_UNITS TEXT," \
+						  "TIME_INTERVAL INTEGER," \ // in seconds
 						  "LAST_UPDATED TEXT DEFAULT(datetime('now', 'localtime'))," \
 						  "PRIMARY KEY (TASK_NAME, METRIC_NAME));";
 		rc = sqlite3_exec(sqliteDB.c_str(), sql, NULL, 0, &zErrMsg); // execute the SQL command
@@ -40,18 +48,23 @@ TaskScheduler::~TaskScheduler() {
 	sqlite3_close(db);
 }
 
-void TaskScheduler::addTask(taskType task, int timeInterval, int timeToStart) {
-	stringToLower(taskName);
+template <typename T, typename U>
+void TaskScheduler::addTask(taskType task, int timeInterval, T func, U... args) {
+	stringToLower(task.taskName);
 	// if the task was never initiated; or if it was initiated, it was not for this particular metric, then create a new row
 	if (!taskExists(task.taskName)
 		|| (taskExists(task.taskName) && activeTasks[task.taskName].first != task.metricName)) {
 		activeTasks[task.taskName] = std::make_pair<std::string, bool>(task.metricName, true); // mark task as active
-		std::string sql = "INSERT INTO SAMPLES (TASK_NAME, METRIC_NAME, METRIC_UNITS) " \
+		std::string sql = "INSERT INTO SAMPLES (TASK_NAME, METRIC_NAME, METRIC_UNITS, TIME_INTERVAL) " \
 						  "VALUES (" + task.taskName + ", " + task.metricName + ", " + \
-						  task.metricUnits + ");";
+						  task.metricUnits + ", " + timeInterval + ");";
 		char *zErrMsg = 0;
 		int rc = sqlite3_exec(db, sql, NULL, 0, &zErrMsg); // execute the SQL command
-		verifySQLExec(rc, zErrMsg);
+		if (!verifySQLExec(rc, zErrMsg)) {
+			return;
+		}
+		std::thread t1 (runTask, func, args...);
+		t1.join();
 	} else {
 		if (activeTasks[task.taskName].first == task.metricName
 		    && !activeTasks[task.taskName].second) { // this task exists but is inactive
@@ -64,7 +77,7 @@ void TaskScheduler::addTask(taskType task, int timeInterval, int timeToStart) {
 }
 
 void cancelTask(taskType task) {
-	stringToLower(taskName);
+	stringToLower(task.taskName);
 	if (!taskExists(task.taskName)) {
 		std::cerr << "Trying to cancel a non-existent task" << std::endl;
 	} else if (!activeTasks[task.taskName].second) {
@@ -76,8 +89,8 @@ void cancelTask(taskType task) {
 	}
 }
 
-void rescheduleTask(taskType task, int timeInterval, int timeToStart) {
-	stringToLower(taskName);
+void rescheduleTask(taskType task, int timeInterval) {
+	stringToLower(task.taskName);
 	if (!taskExists(task.taskName)) {
 		std::cerr << "Trying to reschedule a non-existent task" << std::endl;
 	} else {

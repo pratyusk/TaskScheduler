@@ -11,6 +11,7 @@
 #include <cstring>
 #include <unordered_map>
 #include <utility>
+#include <thread>
 #include <sqlite3.h>
 
 struct taskType {
@@ -28,6 +29,9 @@ class TaskScheduler {
 		bool taskExists(std::string taskName); // check if the task has ever been initiated
 		void stringToLower(std::string &inputString); // convert string to lower case
 
+		template <typename T, typename U>
+		void runTask(T func, U... args); // run the task given by func
+
 	public:
 		// opens a sqlite database _db
 		TaskScheduler(std::string _db);
@@ -36,13 +40,14 @@ class TaskScheduler {
 		~TaskScheduler();
 
 		// add a new task and set it's frequency
-		void addTask(taskType task, int timeInterval, int timeToStart);
+		template <typename T, typename U>
+		void addTask(taskType task, int timeInterval, T func, U... args);
 
 		// cancel a task
 		void cancelTask(taskType task);
 
 		// change the frequency of a task
-		void rescheduleTask(taskType task, int timeInterval, int timeToStart);
+		void rescheduleTask(taskType task, int timeInterval);
 };
 
 #endif

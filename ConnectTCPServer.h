@@ -29,3 +29,4 @@ const unsigned int MAX_BUF_SIZE = 2000; // set to maximum bytes to receive
 int ConnectTCPServer(const char *addr, const char *port, double *connectTime);
 
 #endif
+

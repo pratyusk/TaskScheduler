@@ -30,7 +30,7 @@ class TaskScheduler {
 		void stringToLower(std::string &inputString); // convert string to lower case
 
 		template <typename T, typename U>
-		void runTask(T func, U... args); // run the task given by func
+		void runTask(taskType &task, T func, U... args); // run the task given by func
 
 	public:
 		// opens a sqlite database _db

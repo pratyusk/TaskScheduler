@@ -1,16 +1,5 @@
 #include "TaskScheduler.h"
 
-template <typename T, typename U>
-void runTask(T func, U... args) {
-	while(1) {
-
-	}
-}
-
-void TaskScheduler::stringToLower(std::string &inputString) {
-	std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
-}
-
 bool TaskScheduler::verifySQLExec(int rc, char *zErrMsg) {
 	if (rc != SQLITE_OK) {
 		std::cerr << "SQL error: " << zErrMsg << std::endl;
@@ -18,6 +7,33 @@ bool TaskScheduler::verifySQLExec(int rc, char *zErrMsg) {
 	} else {
 		std::cout << "Table created successfully" << std::endl;
 	}
+}
+
+// callback function for select statements
+static int callback(void *data, int argc, char **argv, char **azColName) {
+	for (int i = 0; i < argc; i++) {
+		printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+	}
+	printf("\n");
+	return 0;
+}
+
+template <typename T, typename U>
+void runTask(taskType &task, T func, U... args) {
+	char *zErrMsg = 0;
+	std::string sql;
+	int rc;
+	int data;
+	sql = "SELECT METRIC_VALUE, TIME_INTERVAL FROM SAMPLES WHERE TASK_NAME = " \
+		  + task.taskName + " AND METRIC_NAME = " + task.metricName + ";";
+	while(1) {
+		rc = sqlite3_exec(db, sql, callback, (void *)&data, &zErrMsg);
+		if (!verifySQLExec(rc, zErrMsg)) break;
+	}
+}
+
+void TaskScheduler::stringToLower(std::string &inputString) {
+	std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
 }
 
 bool TaskScheduler::taskExists(std::string taskName) {
@@ -37,6 +53,10 @@ TaskScheduler::TaskScheduler(std::string _db) : sqliteDB(_db) {
 						  "METRIC_VALUE REAL DEFAULT 0," \
 						  "METRIC_UNITS TEXT," \
 						  "TIME_INTERVAL INTEGER," \ // in seconds
+						  "NUM_TIMES_RUN INTEGER," \
+						  "AVERAGE REAL," \
+						  "MINIMUM REAL," \
+						  "MAXIMUM REAL," \
 						  "LAST_UPDATED TEXT DEFAULT(datetime('now', 'localtime'))," \
 						  "PRIMARY KEY (TASK_NAME, METRIC_NAME));";
 		rc = sqlite3_exec(sqliteDB.c_str(), sql, NULL, 0, &zErrMsg); // execute the SQL command
@@ -63,7 +83,7 @@ void TaskScheduler::addTask(taskType task, int timeInterval, T func, U... args) 
 		if (!verifySQLExec(rc, zErrMsg)) {
 			return;
 		}
-		std::thread t1 (runTask, func, args...);
+		std::thread t1(runTask, task, func, args...);
 		t1.join();
 	} else {
 		if (activeTasks[task.taskName].first == task.metricName

@@ -1,4 +1,7 @@
 # TaskScheduler
+I implemented the periodic task scheduler using C++11 libraries and resources as mentioned
+in the references. The development is done on a Linux platform with GCC version
+g++ (GCC) 4.8.5 20150623 (Red Hat 4.8.5-11)
 
 ## Usage ##
 	$ make clean
@@ -30,3 +33,5 @@ Currently tested for:
 4. Adding task back
 5. Adding a task that is already running
 6. Cancelling a task that is not running
+7. When a task takes longer than the interval to complete
+8. Precision issues

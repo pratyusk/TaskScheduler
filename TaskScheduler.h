@@ -26,6 +26,7 @@ class TaskScheduler {
 		sqlite3 *db;
 		bool verifySQLExec(int rc, char *zErrMsg); // error handling when executing SQL commands
 		bool taskExists(std::string taskName); // check if the task has ever been initiated
+		void stringToLower(std::string &inputString); // convert string to lower case
 
 	public:
 		// opens a sqlite database _db

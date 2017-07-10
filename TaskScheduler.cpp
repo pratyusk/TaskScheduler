@@ -1,5 +1,9 @@
 #include "TaskScheduler.h"
 
+void TaskScheduler::stringToLower(std::string &inputString) {
+	std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
+}
+
 bool TaskScheduler::verifySQLExec(int rc, char *zErrMsg) {
 	if (rc != SQLITE_OK) {
 		std::cerr << "SQL error: " << zErrMsg << std::endl;
@@ -37,6 +41,7 @@ TaskScheduler::~TaskScheduler() {
 }
 
 void TaskScheduler::addTask(taskType task, int timeInterval, int timeToStart) {
+	stringToLower(taskName);
 	// if the task was never initiated; or if it was initiated, it was not for this particular metric, then create a new row
 	if (!taskExists(task.taskName)
 		|| (taskExists(task.taskName) && activeTasks[task.taskName].first != task.metricName)) {
@@ -58,8 +63,8 @@ void TaskScheduler::addTask(taskType task, int timeInterval, int timeToStart) {
 	}
 }
 
-// cancel a task
 void cancelTask(taskType task) {
+	stringToLower(taskName);
 	if (!taskExists(task.taskName)) {
 		std::cerr << "Trying to cancel a non-existent task" << std::endl;
 	} else if (!activeTasks[task.taskName].second) {
@@ -71,12 +76,12 @@ void cancelTask(taskType task) {
 	}
 }
 
-// change the frequency of a task
 void rescheduleTask(taskType task, int timeInterval, int timeToStart) {
+	stringToLower(taskName);
 	if (!taskExists(task.taskName)) {
 		std::cerr << "Trying to reschedule a non-existent task" << std::endl;
 	} else {
-		sql = "UPDATE SAMPLES set  = 25000.00 where ID=1; "
+		sql = "UPDATE SAMPLES set " +  = 25000.00 where ID=1; "
 	}
 }
 

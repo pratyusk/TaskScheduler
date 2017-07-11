@@ -24,9 +24,8 @@ const unsigned int MAX_BUF_SIZE = 2000; // set to maximum bytes to receive
 // address is provided in addr and port number provided in port
 // time taken to connect is calculated in milliseconds (wall-clock time)
 // Optional code provided for HTTP GET request
-// returns 0 on success, 1 on failure during getaddrinfo, 2 on failure to connect
-// updates connectTime with time taken to connect on success
-int ConnectTCPServer(const char *addr, const char *port, double *connectTime);
+// returns connectTime on success, -1 on failure during getaddrinfo, -2 on failure to connect
+double ConnectTCPServer(const char *addr, const char *port);
 
 #endif
 

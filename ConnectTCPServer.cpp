@@ -1,8 +1,8 @@
 #include "ConnectTCPServer.h"
 
-int ConnectTCPServer(const char *addr, const char *port, double *connectTime) {
+double ConnectTCPServer(const char *addr, const char *port) {
 	auto start = std::chrono::system_clock::now(); // start clock
-
+    double connectTime = 0;
     int sockfd; // socket file descriptor
     struct addrinfo hints, *servinfo, *p;
     int rv; // status of getaddrinfo
@@ -13,7 +13,7 @@ int ConnectTCPServer(const char *addr, const char *port, double *connectTime) {
 
     if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-        return 1;
+        return -1;
     }
 
     // loop through all the results and connect to the first we can
@@ -35,7 +35,7 @@ int ConnectTCPServer(const char *addr, const char *port, double *connectTime) {
 
     if (p == NULL) {
         fprintf(stderr, "client: failed to connect\n");
-        return 2;
+        return -2;
     }
 
     freeaddrinfo(servinfo); // all done with this structure
@@ -55,9 +55,9 @@ int ConnectTCPServer(const char *addr, const char *port, double *connectTime) {
 
     auto end = std::chrono::system_clock::now(); // end clock
     std::chrono::duration<double, std::milli> elapsed = end - start; // time in milliseconds (may change to micro or nano)
-    *connectTime = static_cast<double>(elapsed.count()); // update time
+    connectTime = static_cast<double>(elapsed.count()); // update time
 
     close(sockfd);
 
-    return 0;
+    return connectTime;
 }

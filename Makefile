@@ -4,6 +4,9 @@ CC = g++
 # flags: C++11 support + GDB + show all warnings
 CFLAGS = -std=c++0x -g -Wall
 
+# sqlite flag
+SQLITE = -lsqlite3
+
 # object files
 OBJECTS = TaskScheduler.o ConnectTCPServer.o CalculatePhysicalMemory.o
 
@@ -17,7 +20,7 @@ all: $(TARGET)
 
 # g++ command
 $(TARGET): $(OBJECTS) $(TARGET).cpp
-	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) $(TARGET).cpp
+	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) $(TARGET).cpp $(SQLITE)
 	chmod +x $(TARGET)
 	chmod +x sampleTest.sh
 

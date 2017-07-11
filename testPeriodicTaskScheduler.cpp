@@ -2,7 +2,8 @@
 #include <string>
 #include <algorithm>
 #include <unistd.h>
-// #include "TaskScheduler.h"
+#include <vector>
+#include "TaskScheduler.h"
 #include "ConnectTCPServer.h"
 #include "CalculatePhysicalMemory.h"
 
@@ -21,6 +22,10 @@ void checkStreamState(bool state, T &val) {
 	}
 }
 
+void stringToLower(std::string &inputString) {
+	std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
+}
+
 bool checkCommand(char command) {
 	if (command != 'A' && command != 'C' && command != 'R' && command != 'E' && command != 'S') {
 		std::cerr << "Please enter a valid command!" << std::endl;
@@ -29,8 +34,9 @@ bool checkCommand(char command) {
 	return true;
 }
 
-bool checkTask(std::string taskName, TaskScheduler &scheduler) {
-	if (!scheduler.validateTaskName(taskName)) {
+bool checkTask(std::string taskName, std::vector<std::string> &listOfPrograms) {
+	stringToLower(taskName);
+	if (find(listOfPrograms.begin(), listOfPrograms.end(), taskName) == listOfPrograms.end()) {
 		std::cerr << "Please enter a valid task name! (Available: ConnectTCPServer, CalculatePhysicalMemory)" << std::endl;
 		return false;
 	}
@@ -39,7 +45,12 @@ bool checkTask(std::string taskName, TaskScheduler &scheduler) {
 
 //
 int main(int argc, char **argv) {
-	TaskScheduler scheduler;
+	std::vector<std::string> listOfPrograms;
+	std::string program1 = "connecttcpserver";
+	std::string program2 = "calculatephysicalmemory";
+	listOfPrograms.push_back(program1);
+	listOfPrograms.push_back(program2);
+	TaskScheduler scheduler("sampleDB.db");
 	std::cout << "*** Tasks available : CalculatePhysicalMemory, ConnectTCPServer ***" << std::endl;
 	std::cout << "*** Commands ***" << std::endl;
 	std::cout << "\tAdd Task : 'A <task_name> [<addr>] [<port>] <time_interval> <time_to_start_from_now>'" << std::endl;
@@ -65,24 +76,36 @@ int main(int argc, char **argv) {
 		}
 		std::string taskName;
 		checkStreamState(std::cin >> taskName, taskName);
-		while (!checkTask(taskName)) {
+		while (!checkTask(taskName, listOfPrograms)) {
 			checkStreamState(std::cin >> taskName, taskName);
 		}
 		std::transform(taskName.begin(), taskName.end(), taskName.begin(), ::tolower);
-		if (taskName == "connecttcpserver" && command == 'A') {
-			std::string addr, port;
-			checkStreamState(std::cin >> addr, addr);
-			checkStreamState(std::cin >> port, port);
-		}
 		if (command == 'A') {
-			int timeInterval, timeToStart;
+			int timeInterval;
 			checkStreamState(std::cin >> timeInterval, timeInterval);
-			checkStreamState(std::cin >> timeToStart, timeToStart);
+			std::string metricName, metricUnits;
+			checkStreamState(std::cin >> metricName, metricName);
+			checkStreamState(std::cin >> metricUnits, metricUnits);
+			taskType task;
+			task.taskName = taskName;
+			task.metricName = metricName;
+			task.metricUnits = metricUnits;
+			stringToLower(taskName);
+			if (taskName == listOfPrograms[1]) {
+				std::function<int()> func = CalculatePhysicalMemory;
+				scheduler.addTask<decltype(func)>(task, timeInterval, func);
+			} else if (taskName == listOfPrograms[0]) {
+				std::string addr, port;
+				checkStreamState(std::cin >> addr, addr);
+				checkStreamState(std::cin >> port, port);
+				std::function<double(const char *, const char *)> func = ConnectTCPServer;
+				scheduler.addTask<decltype(func), const char *, const char *>(task, timeInterval, func, addr.c_str(), port.c_str());
+			}
+
 		}
 		if (command	== 'R') {
-			int newTimeInterval, timeToStart;
+			int newTimeInterval;
 			checkStreamState(std::cin >> newTimeInterval, newTimeInterval);
-			checkStreamState(std::cin >> timeToStart, timeToStart);
 		}
 		std::cout << std::endl;
 	}

@@ -43,6 +43,17 @@ bool checkTask(std::string taskName, std::vector<std::string> &listOfPrograms) {
 	return true;
 }
 
+bool checkMetric(std::string metricName, std::string taskName, std::unordered_map<std::string, std::string> &metricMap) {
+	stringToLower(metricName);
+	stringToLower(taskName);
+	if (metricMap[taskName] != metricName) {
+		std::cerr << "Please enter a valid metric name for the given task name! \n(Available: " \
+		"ConnectTime for ConnectTCPServer, PhysicalMemory for CalculatePhysicalMemory)" << std::endl;
+		return false;
+	}
+	return true;
+}
+
 //
 int main(int argc, char **argv) {
 	std::vector<std::string> listOfPrograms;
@@ -50,13 +61,17 @@ int main(int argc, char **argv) {
 	std::string program2 = "calculatephysicalmemory";
 	listOfPrograms.push_back(program1);
 	listOfPrograms.push_back(program2);
+	std::unordered_map<std::string, std::string> metricMap;
+	metricMap[program1] = "connecttime";
+	metricMap[program2] = "physicalmemory";
 	TaskScheduler scheduler("sampleDB.db");
 	std::cout << "*** Tasks available : CalculatePhysicalMemory, ConnectTCPServer ***" << std::endl;
 	std::cout << "*** Commands ***" << std::endl;
-	std::cout << "\tAdd Task : 'A <task_name> [<addr>] [<port>] <time_interval> <time_to_start_from_now>'" << std::endl;
-	std::cout << "\t\tNOTE : For ConnectTCPServer, provide address and port number (whitespace separated)" << std::endl;
-	std::cout << "\tCancel Task : 'C <task_name>'" << std::endl;
-	std::cout << "\tReschedule Task : 'R <task_name> <new_time_interval> <time_to_start_from_now>'" << std::endl;
+	std::cout << "\tAdd Task : 'A <task_name> <metric_name> <metric_units> <time_interval> [<addr>] [<port>]'" << std::endl;
+	std::cout << "\t\tNOTE : For ConnectTCPServer, provide address and port number (whitespace separated); " \
+				 "time interval in seconds" << std::endl;
+	std::cout << "\tCancel Task : 'C <task_name> <metric_name>'" << std::endl;
+	std::cout << "\tReschedule Task : 'R <task_name> <metric_name> <new_time_interval>'" << std::endl;
 	std::cout << "\t\tNOTE : All times are in seconds" << std::endl;
 	std::cout << "\tSleep : 'S <wait_time>(in seconds)'\n" << std::endl;
 	std::cout << "\tExit test case : 'E'\n" << std::endl;
@@ -74,32 +89,35 @@ int main(int argc, char **argv) {
 			sleep(waitTime);
 			continue;
 		}
-		std::string taskName;
+		std::string taskName, metricName;
 		checkStreamState(std::cin >> taskName, taskName);
 		while (!checkTask(taskName, listOfPrograms)) {
 			checkStreamState(std::cin >> taskName, taskName);
 		}
-		std::transform(taskName.begin(), taskName.end(), taskName.begin(), ::tolower);
+		stringToLower(taskName);
+		checkStreamState(std::cin >> metricName, metricName);
+		while (!checkMetric(metricName, taskName, metricMap)) {
+			checkStreamState(std::cin >> metricName, metricName);
+		}
+		stringToLower(metricName);
 		if (command == 'A') {
+			std::string metricUnits;
+			checkStreamState(std::cin >> metricUnits, metricUnits);
 			int timeInterval;
 			checkStreamState(std::cin >> timeInterval, timeInterval);
-			std::string metricName, metricUnits;
-			checkStreamState(std::cin >> metricName, metricName);
-			checkStreamState(std::cin >> metricUnits, metricUnits);
 			taskType task;
 			task.taskName = taskName;
 			task.metricName = metricName;
 			task.metricUnits = metricUnits;
-			stringToLower(taskName);
 			if (taskName == listOfPrograms[1]) {
 				std::function<int()> func = CalculatePhysicalMemory;
-				scheduler.addTask<decltype(func)>(task, timeInterval, func);
+				scheduler.addTask(task, timeInterval, func);
 			} else if (taskName == listOfPrograms[0]) {
 				std::string addr, port;
 				checkStreamState(std::cin >> addr, addr);
 				checkStreamState(std::cin >> port, port);
 				std::function<double(const char *, const char *)> func = ConnectTCPServer;
-				scheduler.addTask<decltype(func), const char *, const char *>(task, timeInterval, func, addr.c_str(), port.c_str());
+				scheduler.addTask(task, timeInterval, func, addr.c_str(), port.c_str());
 			}
 
 		}

@@ -1,8 +1,8 @@
-A CONNECTTCPSERVER 3 connecttime ms www.google.com 80
-A CALCULATEPHYSICALMEMORY 5 physicalmemory kB
+A CONNECTTCPSERVER connecttime ms 3 www.google.com 80
+A CALCULATEPHYSICALMEMORY physicalmemory kB 5
 S 15
-C CONNECTTCPSERVER
+C CONNECTTCPSERVER connecttime
 S 8
-A CONNECTTCPSERVER www.google.com 80 5 connecttime ms
+A CONNECTTCPSERVER connecttime ms 5 www.google.com 80
 S 20
 E

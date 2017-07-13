@@ -36,4 +36,4 @@ CalculatePhysicalMemory.o: CalculatePhysicalMemory.cpp CalculatePhysicalMemory.h
 
 # clean executables
 clean:
-	$(RM) $(TARGET) $(TARGET).exe *.o
+	$(RM) $(TARGET) $(TARGET).exe *.o *.db*

@@ -2,10 +2,10 @@
 clear
 
 # SQL commands
-echo "--- Creating database ---"
-touch sampleDB.db
-sqlite3 sampleDB.db < sampleSQL.sql
-echo "Done!\n"
+# echo "--- Creating database ---"
+# touch sampleDB.db
+# sqlite3 sampleDB.db < sampleSQL.sql
+# echo "Done!\n"
 
 # Test case
 # Please modify sampleInput.txt to change test case
@@ -23,5 +23,4 @@ echo "Exit test case"
 echo "Test case ended!"
 
 # Clean up
-rm sampleDB.db
-rm sampleDB.db~
+rm *.db*

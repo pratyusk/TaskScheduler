@@ -1,5 +1,46 @@
 #include "TaskScheduler.h"
 
+int TaskScheduler::callback(void *data, int argc, char **argv, char **azColName) {
+	double *dataPtr = static_cast<double *>(data);
+	double metricValue = *dataPtr;
+	std::string taskName(argv[0]);
+	std::string metricName(argv[1]);
+	std::string numTimesRunString(argv[3]);
+	double numTimesRun = std::stod(numTimesRunString);
+	std::string averageString(argv[4]);
+	double average = std::stod(averageString);
+	std::string minimunString(argv[5]);
+	double minimum = std::stod(minimunString);
+	std::string maximumString(argv[6]);
+	double maximum = std::stod(maximumString);
+	numTimesRun++;
+	average += (metricValue / numTimesRun);
+	minimum = std::min(minimum, metricValue);
+	maximum = std::max(maximum, metricValue);
+	std::string sql = "UPDATE SAMPLES SET METRIC_VALUE = " + std::to_string(metricValue) + ", " \
+					  "NUM_TIMES_RUN = " + std::to_string(numTimesRun) + ", AVERAGE = " + std::to_string(average) + ", " \
+					  "MINIMUM = " + std::to_string(minimum) + ", MAXIMUM = " + std::to_string(maximum) + ", " \
+					  "LAST_UPDATED = datetime('now', 'localtime') WHERE " \
+					  "TASK_NAME = '" + taskName + "' AND METRIC_NAME = '" + metricName + "';";
+	char *zErrMsg = 0;
+	int rc = sqlite3_exec(db, sql.c_str(), NULL, 0, &zErrMsg);
+	if (rc != SQLITE_OK) {
+		std::cerr << "SQL error: " << zErrMsg << std::endl;
+		sqlite3_free(zErrMsg);
+		*dataPtr = -1;
+	} else {
+		std::string timeInterval(argv[2]);
+		*dataPtr = std::stod(timeInterval); // update data to TIME_INTERVAL
+	}
+	std::cout << "Task: " << taskName << " metric: " << metricName << std::endl;
+	std::cout << "Value: " << metricValue << " " << argv[7] << std::endl;
+	std::cout << "NUM_TIMES_RUN: " << numTimesRun << std::endl;
+	std::cout << "AVERAGE: " << average << std::endl;
+	std::cout << "MINIMUM: " << minimum << std::endl;
+	std::cout << "MAXIMUM: " << maximum << std::endl;
+	return 0;
+}
+
 bool TaskScheduler::verifySQLExec(int rc, char *zErrMsg) {
 	if (rc != SQLITE_OK) {
 		std::cerr << "SQL error: " << zErrMsg << std::endl;
@@ -60,17 +101,22 @@ void TaskScheduler::cancelTask(std::string taskName, std::string metricName) {
 		std::cerr << "Trying to cancel an inactive task" << std::endl;
 	} else {
 		if (activeTasks[taskName].second) {
+			std::cout << "Task cancelled : " << taskName << std::endl;
 			activeTasks[taskName].second = false;
 		}
 	}
 }
 
 void TaskScheduler::rescheduleTask(std::string taskName, std::string metricName, int timeInterval) {
-	// stringToLower(taskName);
-	// stringToLower(metricName);
-	// if (!taskExists(taskName, metricName)) {
-	// 	std::cerr << "Trying to reschedule a non-existent task" << std::endl;
-	// } else {
-	// 	sql = "UPDATE SAMPLES set " +  = 25000.00 where ID=1; "
-	// }
+	stringToLower(taskName);
+	stringToLower(metricName);
+	if (!taskExists(taskName, metricName)) {
+		std::cerr << "Trying to reschedule a non-existent task" << std::endl;
+	} else {
+		char *zErrMsg = 0;
+		std::string sql = "UPDATE SAMPLES SET TIME_INTERVAL = " + std::to_string(timeInterval) + " WHERE TASK_NAME = " \
+			  "'" + taskName + "' AND METRIC_NAME = '" + metricName + "';";
+		int rc = sqlite3_exec(db, sql.c_str(), NULL, 0, &zErrMsg); // execute the SQL command
+		verifySQLExec(rc, zErrMsg);
+	}
 }

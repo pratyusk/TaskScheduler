@@ -80,12 +80,12 @@ int main(int argc, char **argv) {
 		char command;
 		checkStreamState(std::cin >> command, command);
 		command = toupper(command);
-		// std::cout << "command is : " << command << std::endl;
 		if (!checkCommand(command)) continue;
 		if (command == 'E') break;
 		if (command == 'S') {
 			int waitTime;
 			checkStreamState(std::cin >> waitTime, waitTime);
+			std::cout << "waiting for " << waitTime << " seconds\n" << std::endl;
 			sleep(waitTime);
 			continue;
 		}
@@ -119,13 +119,14 @@ int main(int argc, char **argv) {
 				std::function<double(const char *, const char *)> func = ConnectTCPServer;
 				scheduler.addTask(task, timeInterval, func, addr.c_str(), port.c_str());
 			}
-
-		}
-		if (command	== 'R') {
+		} else if (command	== 'R') {
 			int newTimeInterval;
 			checkStreamState(std::cin >> newTimeInterval, newTimeInterval);
+			scheduler.rescheduleTask(taskName, metricName, newTimeInterval);
+		} else if (command == 'C') {
+			scheduler.cancelTask(taskName, metricName);
 		}
-		std::cout << std::endl;
+		std::cout << "command completed: " << command << " " << taskName << " " << metricName << "\n" << std::endl;
 	}
 	return 0;
 }

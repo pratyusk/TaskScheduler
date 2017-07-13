@@ -16,17 +16,7 @@
 #include <functional>
 #include <algorithm>
 #include <sqlite3.h>
-
-// callback function for select statements
-static int callback(void *data, int argc, char **argv, char **azColName) {
-	double *data1 = static_cast<double *>(data);
-	*data1 = 10;
-	for (int i = 0; i < argc; i++) {
-		printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-	}
-	printf("\n");
-	return 0;
-}
+#include <unistd.h>
 
 struct taskType {
 	std::string taskName;
@@ -43,22 +33,23 @@ class TaskScheduler {
 		bool verifySQLExec(int rc, char *zErrMsg); // error handling when executing SQL commands
 		bool taskExists(std::string taskName, std::string metricName); // check if the task has ever been initiated
 		void stringToLower(std::string &inputString); // convert string to lower case
+		int callback(void *data, int argc, char **argv, char **azColName); // callback function for select statements
 
 		template <typename T, typename... U>
 		void runTask(taskType &task, T &func, U... args) { // run task func
 			char *zErrMsg = 0;
-			std::string sql;
 			int rc;
 			double data = 0;
-			sql = "SELECT TIME_INTERVAL, NUM_TIMES_RUN, AVERAGE, MINIMUM, MAXIMUM " \
+			std::string sql = "SELECT TASK_NAME, METRIC_NAME, TIME_INTERVAL, NUM_TIMES_RUN, AVERAGE, MINIMUM, MAXIMUM, METRIC_UNITS " \
 				  "FROM SAMPLES WHERE TASK_NAME = '" + task.taskName + \
 				  "' AND METRIC_NAME = '" + task.metricName + "';";
 			while(1) {
 				data = func(args...);
 				rc = sqlite3_exec(db, sql.c_str(), callback, (void *)&data, &zErrMsg);
-				if (!verifySQLExec(rc, zErrMsg)) break;
-				if (data < 0) break;
-				break;
+				if (!verifySQLExec(rc, zErrMsg)) break; // invalid SQL
+				if (data < 0) break; // some error during callback
+				if (!activeTasks[task.taskName].second) break; // task cancelled
+				sleep(data); // updated data is sleep time in seconds
 			}
 		}
 

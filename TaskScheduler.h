@@ -15,8 +15,58 @@
 #include <thread>
 #include <functional>
 #include <algorithm>
+#include <tuple>
 #include <sqlite3.h>
 #include <unistd.h>
+
+struct callbackData {
+	double metricValue;
+	sqlite3 *db;
+};
+
+static int callback(void *data, int argc, char **argv, char **azColName) {
+	callbackData *dataPtr = static_cast<callbackData *>(data);
+	double metricValue = dataPtr->metricValue;
+	std::string taskName(argv[0]);
+	std::string metricName(argv[1]);
+	std::string numTimesRunString(argv[3]);
+	double numTimesRun = std::stod(numTimesRunString);
+	std::string averageString(argv[4]);
+	double average = std::stod(averageString);
+	std::string minimunString(argv[5]);
+	double minimum = std::stod(minimunString);
+	std::string maximumString(argv[6]);
+	double maximum = std::stod(maximumString);
+	numTimesRun++;
+	average -= average / numTimesRun;
+	average += metricValue / numTimesRun;
+	if (numTimesRun == 1) minimum = metricValue;
+	else minimum = std::min(minimum, metricValue);
+	maximum = std::max(maximum, metricValue);
+	std::string sql = "UPDATE SAMPLES SET METRIC_VALUE = " + std::to_string(metricValue) + ", " \
+					  "NUM_TIMES_RUN = " + std::to_string(numTimesRun) + ", AVERAGE = " + std::to_string(average) + ", " \
+					  "MINIMUM = " + std::to_string(minimum) + ", MAXIMUM = " + std::to_string(maximum) + ", " \
+					  "LAST_UPDATED = datetime('now', 'localtime') WHERE " \
+					  "TASK_NAME = '" + taskName + "' AND METRIC_NAME = '" + metricName + "';";
+	char *zErrMsg = 0;
+	int rc = sqlite3_exec(dataPtr->db, sql.c_str(), NULL, 0, &zErrMsg);
+	if (rc != SQLITE_OK) {
+		std::cerr << "SQL error: " << zErrMsg << std::endl;
+		sqlite3_free(zErrMsg);
+		dataPtr->metricValue = -1;
+	} else {
+		std::string timeInterval(argv[2]);
+		dataPtr->metricValue = std::stod(timeInterval); // update data to TIME_INTERVAL
+	}
+	std::cout << "Task: " << taskName << " metric: " << metricName << std::endl;
+	std::cout << "Value: " << metricValue << " " << argv[7] << std::endl;
+	std::cout << "NUM_TIMES_RUN: " << numTimesRun << std::endl;
+	std::cout << "AVERAGE: " << average << std::endl;
+	std::cout << "MINIMUM: " << minimum << std::endl;
+	std::cout << "MAXIMUM: " << maximum << std::endl;
+	std::cout << std::endl;
+	return 0;
+}
 
 struct taskType {
 	std::string taskName;
@@ -33,23 +83,24 @@ class TaskScheduler {
 		bool verifySQLExec(int rc, char *zErrMsg); // error handling when executing SQL commands
 		bool taskExists(std::string taskName, std::string metricName); // check if the task has ever been initiated
 		void stringToLower(std::string &inputString); // convert string to lower case
-		int callback(void *data, int argc, char **argv, char **azColName); // callback function for select statements
 
 		template <typename T, typename... U>
 		void runTask(taskType &task, T &func, U... args) { // run task func
 			char *zErrMsg = 0;
 			int rc;
-			double data = 0;
+			callbackData data;
+			data.metricValue = 0;
+			data.db = db;
 			std::string sql = "SELECT TASK_NAME, METRIC_NAME, TIME_INTERVAL, NUM_TIMES_RUN, AVERAGE, MINIMUM, MAXIMUM, METRIC_UNITS " \
 				  "FROM SAMPLES WHERE TASK_NAME = '" + task.taskName + \
 				  "' AND METRIC_NAME = '" + task.metricName + "';";
 			while(1) {
-				data = func(args...);
+				data.metricValue = func(args...);
 				rc = sqlite3_exec(db, sql.c_str(), callback, (void *)&data, &zErrMsg);
 				if (!verifySQLExec(rc, zErrMsg)) break; // invalid SQL
-				if (data < 0) break; // some error during callback
+				if (data.metricValue < 0) break; // some error during callback
 				if (!activeTasks[task.taskName].second) break; // task cancelled
-				sleep(data); // updated data is sleep time in seconds
+				sleep(static_cast<int>(data.metricValue)); // updated data is sleep time in seconds
 			}
 		}
 
@@ -76,9 +127,18 @@ class TaskScheduler {
 				if (!verifySQLExec(rc, zErrMsg)) {
 					return;
 				}
-				// std::thread t1(runTask<, task, func, args...);
+				// there is a bug in gcc compiler (4.8.5) which prevents creation of lambda
+				// functions with parameter packs. so I have manually extracted the parameters
+				// for this project. It should however work for any number of arguments with
+				// gcc 4.9.0 or higher or clang++ compiler.
+				// auto it = [=]() {
+				// 	runTask(task, func, args...);
+				// };
+				// std::thread t1(it);
+				// std::thread t1(&TasekScheduler::runTask, this, task, func, args...);
 				// t1.join();
-				runTask(task, func, args...);
+				// runTask(task, func, args...);
+				// std::make_tuple((runTask(task, func, std::forward<U>(args)),0)...);
 			} else {
 				if (activeTasks[task.taskName].first == task.metricName
 				    && !activeTasks[task.taskName].second) { // this task exists but is inactive

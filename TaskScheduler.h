@@ -27,6 +27,7 @@ struct callbackData {
 static int callback(void *data, int argc, char **argv, char **azColName) {
 	callbackData *dataPtr = static_cast<callbackData *>(data);
 	double metricValue = dataPtr->metricValue;
+	if (metricValue < 0) return 0;
 	std::string taskName(argv[0]);
 	std::string metricName(argv[1]);
 	std::string numTimesRunString(argv[3]);
@@ -85,7 +86,7 @@ class TaskScheduler {
 		void stringToLower(std::string &inputString); // convert string to lower case
 
 		template <typename T, typename... U>
-		void runTask(taskType &task, T &func, U... args) { // run task func
+		void runTask(taskType task, T func, U... args) { // run task func
 			char *zErrMsg = 0;
 			int rc;
 			callbackData data;
@@ -129,16 +130,18 @@ class TaskScheduler {
 				}
 				// there is a bug in gcc compiler (4.8.5) which prevents creation of lambda
 				// functions with parameter packs. so I have manually extracted the parameters
-				// for this project. It should however work for any number of arguments with
+				// for this project. It should, however, for any number of arguments with
 				// gcc 4.9.0 or higher or clang++ compiler.
 				// auto it = [=]() {
 				// 	runTask(task, func, args...);
 				// };
-				// std::thread t1(it);
-				// std::thread t1(&TasekScheduler::runTask, this, task, func, args...);
-				// t1.join();
-				// runTask(task, func, args...);
-				// std::make_tuple((runTask(task, func, std::forward<U>(args)),0)...);
+
+				std::tuple<U...> argsTuple = std::tuple<U...>(args...);
+				auto lambdaFunc = [=]() {
+					runTask(task, func, std::get<0>(argsTuple), std::get<1>(argsTuple));
+				};
+				std::thread t1(lambdaFunc);
+				t1.detach();
 			} else {
 				if (activeTasks[task.taskName].first == task.metricName
 				    && !activeTasks[task.taskName].second) { // this task exists but is inactive

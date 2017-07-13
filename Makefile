@@ -7,6 +7,9 @@ CFLAGS = -std=c++0x -g -Wall
 # sqlite flag
 SQLITE = -lsqlite3
 
+# multi-threading
+PTHREAD = -pthread -ldl
+
 # object files
 OBJECTS = TaskScheduler.o ConnectTCPServer.o CalculatePhysicalMemory.o
 
@@ -20,7 +23,7 @@ all: $(TARGET)
 
 # g++ command
 $(TARGET): $(OBJECTS) $(TARGET).cpp
-	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) $(TARGET).cpp $(SQLITE)
+	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) $(TARGET).cpp $(SQLITE) $(PTHREAD)
 	chmod +x $(TARGET)
 	chmod +x sampleTest.sh
 

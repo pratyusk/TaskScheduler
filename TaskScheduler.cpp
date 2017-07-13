@@ -73,8 +73,9 @@ void TaskScheduler::rescheduleTask(std::string taskName, std::string metricName,
 		std::cerr << "Trying to reschedule a non-existent task" << std::endl;
 	} else {
 		char *zErrMsg = 0;
-		std::string sql = "UPDATE SAMPLES SET TIME_INTERVAL = " + std::to_string(timeInterval) + " WHERE TASK_NAME = " \
-			  "'" + taskName + "' AND METRIC_NAME = '" + metricName + "';";
+		std::string sql = "UPDATE SAMPLES SET TIME_INTERVAL = " + std::to_string(timeInterval) + " WHERE " \
+						  "TASK_NAME = '" + taskName + "' AND METRIC_NAME = '" + metricName + "';";
+		std::cout << "in rescheduleTask sql: " << sql << std::endl;
 		int rc = sqlite3_exec(db, sql.c_str(), NULL, 0, &zErrMsg); // execute the SQL command
 		verifySQLExec(rc, zErrMsg);
 	}

@@ -17,6 +17,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <chrono>
+#include <string>
 
 const unsigned int MAX_BUF_SIZE = 2000; // set to maximum bytes to receive
 
@@ -25,7 +26,7 @@ const unsigned int MAX_BUF_SIZE = 2000; // set to maximum bytes to receive
 // time taken to connect is calculated in milliseconds (wall-clock time)
 // Optional code provided for HTTP GET request
 // returns connectTime on success, -1 on failure during getaddrinfo, -2 on failure to connect
-double ConnectTCPServer(const char *addr, const char *port);
+double ConnectTCPServer(std::string addr, std::string port);
 
 #endif
 

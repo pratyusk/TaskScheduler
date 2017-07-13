@@ -110,12 +110,13 @@ int main(int argc, char **argv) {
 			task.metricName = metricName;
 			task.metricUnits = metricUnits;
 			if (taskName == listOfPrograms[1]) {
-				std::function<int()> func = CalculatePhysicalMemory;
-				scheduler.addTask(task, timeInterval, func);
+				std::function<int(const char *, const char *)> func = CalculatePhysicalMemory;
+				scheduler.addTask(task, timeInterval, func, nullptr, nullptr);
 			} else if (taskName == listOfPrograms[0]) {
 				std::string addr, port;
 				checkStreamState(std::cin >> addr, addr);
 				checkStreamState(std::cin >> port, port);
+				// const char *addrCharString = new
 				std::function<double(const char *, const char *)> func = ConnectTCPServer;
 				scheduler.addTask(task, timeInterval, func, addr.c_str(), port.c_str());
 			}

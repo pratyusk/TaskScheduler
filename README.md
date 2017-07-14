@@ -23,14 +23,14 @@ the same process can have more than one metric. Each task-metric pair gets a uni
 3. The task names are case-insensitive.
 4. Commands A, C, R, S, E are case-insensitive.
 5. Commands are :
-	a. Add Task : 'A <task_name> <metric_name> <metric_units> <time_interval> [<addr>] [<port>]'
-		NOTE : For ConnectTCPServer, provide address and port number (whitespace separated)
-		time interval in seconds
-	b. Cancel Task : 'C <task_name> <metric_name>'
-	c. Reschedule Task : 'R <task_name> <metric_name> <new_time_interval>'
-		NOTE : All times are in seconds
-	d. Sleep : 'S <wait_time>(in seconds)'
-	e. Exit test case : 'E'
+	* Add Task : 'A <task_name> <metric_name> <metric_units> <time_interval> `[<addr>] [<port>]`'
+		- NOTE : For ConnectTCPServer, provide address and port number (whitespace separated)
+		- time interval in seconds
+	* Cancel Task : 'C <task_name> <metric_name>'
+	* Reschedule Task : 'R <task_name> <metric_name> <new_time_interval>'
+		- NOTE : All times are in seconds
+	* Sleep : 'S <wait_time>(in seconds)'
+	* Exit test case : 'E'
 
 ## Testing ##
 Currently tested for:

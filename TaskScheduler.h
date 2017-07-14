@@ -148,24 +148,16 @@ class TaskScheduler {
 				if (!verifySQLExec(rc, zErrMsg)) {
 					return;
 				}
-				// there is a bug in gcc compiler (4.8.5) which prevents creation of lambda
-				// functions with parameter packs. so I have manually extracted the parameters
-				// for this project. It should, however, for any number of arguments with
-				// gcc 4.9.0 or higher or clang++ compiler.
-				// auto it = [=]() {
-				// 	runTask(task, func, args...);
-				// };
 
-				std::tuple<U...> argsTuple = std::tuple<U...>(args...);
-				auto lambdaFunc = [=]() {
-					runTask(task, func, std::get<0>(argsTuple), std::get<1>(argsTuple));
-				};
-				std::thread t1(lambdaFunc);
+				std::thread t1(&TaskScheduler::runTask<T, U...>, this, task, func, args...); // start a new task
 				t1.detach();
-			} else {
+
+			} else { // if an old task
 				if (activeTasks[task.taskName].first == task.metricName
 				    && !activeTasks[task.taskName].second) { // this task exists but is inactive
 					activeTasks[task.taskName].second = true;
+					std::thread t1(&TaskScheduler::runTask<T, U...>, this, task, func, args...); // restart the old task
+					t1.detach();
 				} else { // task is already running
 					std::cerr << "Trying to add a task that's already running. " \
 								 "Please call rescheduleTask instead!" << std::endl;

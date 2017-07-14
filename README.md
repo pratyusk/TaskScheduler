@@ -15,6 +15,9 @@ The tasks are represented by their task names and metric to store and update
 (currently implemented calculating time to connect to a TCP server and
 calculating the physical memory used by the current process).
 Class `TaskScheduler` has `addTask`, `cancelTask` and `rescheduleTask` methods.
+The scheduler can run any task with any signature (signature needs to be declared
+in the test case/ application). It is assumed that the task will return a double
+or int type metric. For more than one metric, the output should be a vector of metric.
 
 ## Notes ##
 1. The task names and their metric names make up the primary key. This is because for this design,
@@ -40,11 +43,3 @@ Currently tested for:
 4. Adding task back
 5. Adding a task that is already running
 6. Cancelling a task that is not running
-
-## Infrastructure  ##
-The scheduler is designed to work for any task/ function with any signature.
-GCC 4.8.5 and lower versions have a bug due to which a lambda function (required to run a
-member function as a separate thread) does not compile with parameter packs.
-I had issue setting up sqlite on my personal machine, so I had to use my university's
-system for development, which still has GCC 4.8.5. As such, I had to adjust the signature
-for CalculatePhysicalMemory (point emphasized for TaskScheduler::addTask()).

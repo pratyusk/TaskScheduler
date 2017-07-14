@@ -6,7 +6,7 @@ clear
 echo "--- Running Test Case ---"
 echo "Add ConnectTCPServer to google.com port 80 with 3 seconds interval"
 echo "Add CalculatePhysicalMemory with 5 seconds interval"
-echo "Wait for 8 seconds"
+echo "Wait for 15 seconds"
 echo "Cancel ConnectTCPServer task"
 echo "Reschedule CalculatePhysicalMemory task with 2 seconds interval"
 echo "Wait 8 seconds"

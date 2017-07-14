@@ -9,7 +9,7 @@
 
 /******************************************************************************
  * Author: Pratyush Kumar
- * Last Updated: July 13, 2017
+ * Last Updated: July 14, 2017
  * Purpose: Generic test case for periodic task scheduler
  * (open sampleTesh.sh for more details)
  *****************************************************************************/
@@ -54,7 +54,7 @@ bool checkMetric(std::string metricName, std::string taskName, std::unordered_ma
 	return true;
 }
 
-//
+
 int main(int argc, char **argv) {
 	std::vector<std::string> listOfPrograms;
 	std::string program1 = "connecttcpserver";
@@ -113,9 +113,10 @@ int main(int argc, char **argv) {
 			task.taskName = taskName;
 			task.metricName = metricName;
 			task.metricUnits = metricUnits;
+			// define task / function signature here
 			if (taskName == listOfPrograms[1]) {
-				std::function<int(std::string, std::string)> func = CalculatePhysicalMemory;
-				scheduler.addTask(task, timeInterval, func, "", "");
+				std::function<int()> func = CalculatePhysicalMemory;
+				scheduler.addTask(task, timeInterval, func);
 			} else if (taskName == listOfPrograms[0]) {
 				std::string addr, port;
 				checkStreamState(std::cin >> addr, addr);

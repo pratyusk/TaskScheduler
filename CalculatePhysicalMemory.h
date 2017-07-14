@@ -9,14 +9,13 @@
 
 /******************************************************************************
  * Author: Pratyush Kumar
- * Last Updated: July 13, 2017
+ * Last Updated: July 14, 2017
  * Purpose: Calculate physical memory used by current process
  *****************************************************************************/
 
 
 // calculates the physical memory of the current process in kB
 // returns the physical memory of the process in kB on success, -1 on failure
-int CalculatePhysicalMemory(std::string a, std::string b);
-// dummy inputs, I had to modify the signature to make lambda functions work for gcc 4.8.5
+int CalculatePhysicalMemory();
 
 #endif

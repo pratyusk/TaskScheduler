@@ -3,7 +3,7 @@
 
 /******************************************************************************
  * Author: Pratyush Kumar
- * Last Updated: July 9, 2017
+ * Last Updated: July 13, 2017
  * Purpose: Connect to a TCP server and calculate the time taken
  *****************************************************************************/
 

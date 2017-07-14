@@ -23,7 +23,14 @@ the same process can have more than one metric. Each task-metric pair gets a uni
 3. The task names are case-insensitive.
 4. Commands A, C, R, S, E are case-insensitive.
 5. Commands are :
-	a.
+	a. Add Task : 'A <task_name> <metric_name> <metric_units> <time_interval> [<addr>] [<port>]'
+		NOTE : For ConnectTCPServer, provide address and port number (whitespace separated)
+		time interval in seconds
+	b. Cancel Task : 'C <task_name> <metric_name>'
+	c. Reschedule Task : 'R <task_name> <metric_name> <new_time_interval>'
+		NOTE : All times are in seconds
+	d. Sleep : 'S <wait_time>(in seconds)'
+	e. Exit test case : 'E'
 
 ## Testing ##
 Currently tested for:
@@ -33,5 +40,11 @@ Currently tested for:
 4. Adding task back
 5. Adding a task that is already running
 6. Cancelling a task that is not running
-7. When a task takes longer than the interval to complete
-8. Precision issues
+
+## Infrastructure  ##
+The scheduler is designed to work for any task/ function with any signature.
+GCC 4.8.5 and lower versions have a bug due to which a lambda function (required to run a
+member function as a separate thread) does not compile with parameter packs.
+I had issue setting up sqlite on my personal machine, so I had to use my university's
+system for development, which still has GCC 4.8.5. As such, I had to adjust the signature
+for CalculatePhysicalMemory (point emphasized for TaskScheduler::addTask()).

@@ -10,7 +10,7 @@ int parseLine(char* line) {
     return i;
 }
 
-int CalculatePhysicalMemory(std::string a, std::string b) {
+int CalculatePhysicalMemory(std::string a, std::string b) { // inputs are dummy
     FILE* file = fopen("/proc/self/status", "r"); // file with process status
     int result = -1;
     char line[128];

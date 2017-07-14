@@ -9,7 +9,7 @@
 
 /******************************************************************************
  * Author: Pratyush Kumar
- * Last Updated: July 9, 2017
+ * Last Updated: July 13, 2017
  * Purpose: Generic test case for periodic task scheduler
  * (open sampleTesh.sh for more details)
  *****************************************************************************/
@@ -76,7 +76,9 @@ int main(int argc, char **argv) {
 	std::cout << "\tSleep : 'S <wait_time>(in seconds)'\n" << std::endl;
 	std::cout << "\tExit test case : 'E'\n" << std::endl;
 	while (1) {
+		cout_lock.lock();
 		std::cout << "Please enter a command:" << std::endl;
+		cout_lock.unlock();
 		char command;
 		checkStreamState(std::cin >> command, command);
 		command = toupper(command);
@@ -85,7 +87,9 @@ int main(int argc, char **argv) {
 		if (command == 'S') {
 			int waitTime;
 			checkStreamState(std::cin >> waitTime, waitTime);
+			cout_lock.lock();
 			std::cout << "waiting for " << waitTime << " seconds\n" << std::endl;
+			cout_lock.unlock();
 			sleep(waitTime);
 			continue;
 		}
@@ -110,15 +114,14 @@ int main(int argc, char **argv) {
 			task.metricName = metricName;
 			task.metricUnits = metricUnits;
 			if (taskName == listOfPrograms[1]) {
-				std::function<int(const char *, const char *)> func = CalculatePhysicalMemory;
-				scheduler.addTask(task, timeInterval, func, nullptr, nullptr);
+				std::function<int(std::string, std::string)> func = CalculatePhysicalMemory;
+				scheduler.addTask(task, timeInterval, func, "", "");
 			} else if (taskName == listOfPrograms[0]) {
 				std::string addr, port;
 				checkStreamState(std::cin >> addr, addr);
 				checkStreamState(std::cin >> port, port);
-				// const char *addrCharString = new
-				std::function<double(const char *, const char *)> func = ConnectTCPServer;
-				scheduler.addTask(task, timeInterval, func, addr.c_str(), port.c_str());
+				std::function<double(std::string, std::string)> func = ConnectTCPServer;
+				scheduler.addTask(task, timeInterval, func, addr, port);
 			}
 		} else if (command	== 'R') {
 			int newTimeInterval;
@@ -127,7 +130,9 @@ int main(int argc, char **argv) {
 		} else if (command == 'C') {
 			scheduler.cancelTask(taskName, metricName);
 		}
+		cout_lock.lock();
 		std::cout << "command completed: " << command << " " << taskName << " " << metricName << "\n" << std::endl;
+		cout_lock.unlock();
 	}
 	return 0;
 }

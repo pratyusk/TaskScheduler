@@ -3,7 +3,7 @@
 
 /******************************************************************************
  * Author: Pratyush Kumar
- * Last Updated: July 9, 2017
+ * Last Updated: July 13, 2017
  * Purpose: Implementation of a periodic task scheduler
  *****************************************************************************/
 
@@ -16,14 +16,20 @@
 #include <functional>
 #include <algorithm>
 #include <tuple>
+#include <mutex>
 #include <sqlite3.h>
 #include <unistd.h>
 
+extern std::mutex cout_lock; // to prevent jumbled stream to terminal
+extern std::mutex globals_lock; // to protect global shared resourses
+
+// input data to sql command callback function
 struct callbackData {
 	double metricValue;
 	sqlite3 *db;
 };
 
+// function called during sql execution
 static int callback(void *data, int argc, char **argv, char **azColName) {
 	callbackData *dataPtr = static_cast<callbackData *>(data);
 	double metricValue = dataPtr->metricValue;
@@ -65,10 +71,12 @@ static int callback(void *data, int argc, char **argv, char **azColName) {
 	std::cout << "AVERAGE: " << average << std::endl;
 	std::cout << "MINIMUM: " << minimum << std::endl;
 	std::cout << "MAXIMUM: " << maximum << std::endl;
+	std::cout << "TIME_INTERVAL: " << argv[2] << std::endl;
 	std::cout << std::endl;
 	return 0;
 }
 
+// wrapper for task details
 struct taskType {
 	std::string taskName;
 	std::string metricName;
@@ -79,8 +87,10 @@ class TaskScheduler {
 	private:
 		// list of active tasks, maps taskName to a metricName and active status
 		std::unordered_map<std::string, std::pair<std::string, bool>> activeTasks;
+
 		std::string sqliteDB; // name of current database
-		sqlite3 *db;
+		sqlite3 *db; // sqlite database pointer
+
 		bool verifySQLExec(int rc, char *zErrMsg); // error handling when executing SQL commands
 		bool taskExists(std::string taskName, std::string metricName); // check if the task has ever been initiated
 		void stringToLower(std::string &inputString); // convert string to lower case
@@ -91,16 +101,25 @@ class TaskScheduler {
 			int rc;
 			callbackData data;
 			data.metricValue = 0;
+			globals_lock.lock();
 			data.db = db;
+			globals_lock.unlock();
 			std::string sql = "SELECT TASK_NAME, METRIC_NAME, TIME_INTERVAL, NUM_TIMES_RUN, AVERAGE, MINIMUM, MAXIMUM, METRIC_UNITS " \
 				  "FROM SAMPLES WHERE TASK_NAME = '" + task.taskName + \
 				  "' AND METRIC_NAME = '" + task.metricName + "';";
 			while(1) {
 				data.metricValue = func(args...);
+				globals_lock.lock();
 				rc = sqlite3_exec(db, sql.c_str(), callback, (void *)&data, &zErrMsg);
+				globals_lock.unlock();
 				if (!verifySQLExec(rc, zErrMsg)) break; // invalid SQL
 				if (data.metricValue < 0) break; // some error during callback
-				if (!activeTasks[task.taskName].second) break; // task cancelled
+				globals_lock.lock();
+				if (!activeTasks[task.taskName].second) { // task cancelled
+					globals_lock.unlock();
+					break;
+				}
+				globals_lock.unlock();
 				sleep(static_cast<int>(data.metricValue)); // updated data is sleep time in seconds
 			}
 		}
@@ -118,6 +137,7 @@ class TaskScheduler {
 			stringToLower(task.taskName);
 			stringToLower(task.metricName);
 			// if the task was never initiated then create a new row
+			globals_lock.lock();
 			if (!taskExists(task.taskName, task.metricName)) {
 				activeTasks[task.taskName] = std::make_pair(task.metricName, true); // mark task as active
 				std::string sql = "INSERT INTO SAMPLES (TASK_NAME, METRIC_NAME, METRIC_UNITS, TIME_INTERVAL) " \
@@ -151,6 +171,7 @@ class TaskScheduler {
 								 "Please call rescheduleTask instead!" << std::endl;
 				}
 			}
+			globals_lock.unlock();
 		}
 
 		// cancel a task
